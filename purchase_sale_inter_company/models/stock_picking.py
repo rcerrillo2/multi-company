@@ -10,7 +10,6 @@ class StockPicking(models.Model):
     _inherit = 'stock.picking'
 
     intercompany_picking_id = fields.Many2one(comodel_name='stock.picking')
-
     @api.multi
     def action_done(self):
         # Only DropShip pickings
@@ -24,7 +23,9 @@ class StockPicking(models.Model):
             for move_line in pick.move_line_ids:
                 qty_done = move_line.qty_done
                 po_move_lines = move_line.move_id.sale_line_id.\
-                    auto_purchase_line_id.move_ids.mapped('move_line_ids')
+                    auto_purchase_line_id.move_ids.mapped('move_line_ids').filtered(
+                        lambda m: m.state != 'done' and m.product_id == move_line.product_id
+                    )
                 for po_move_line in po_move_lines:
                     if po_move_line.product_qty >= qty_done:
                         po_move_line.qty_done = qty_done
